@@ -95,7 +95,7 @@ async function sendMail() {
 
 // runs code repeatedly over an interval
 function startTracking() {
-  const interval = 30; // min
+  const interval = 1; // min
 
   let job = new CronJob(
     `*/${interval} * * * *`,
@@ -112,4 +112,4 @@ function startTracking() {
   job.start();
 }
 
-startTracking();
+module.exports = startTracking;
