@@ -98,7 +98,7 @@ async function sendMail() {
     } else {
       console.log(`EMAIL SENT SUCCESSFULLY: ${info.response}`);
       emailStatus = {
-        lastEmailStatus: info, response,
+        lastEmailStatus: info.response,
         message: "Server up and running!"
       }
     }
@@ -107,7 +107,7 @@ async function sendMail() {
 
 // runs code repeatedly over an interval
 async function startTracking() {
-  const interval = 20; // min
+  const interval = 30; // min
 
   let job = new CronJob(
     `*/${interval} * * * *`,
