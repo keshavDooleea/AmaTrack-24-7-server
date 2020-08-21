@@ -22,7 +22,7 @@ async function getProduct() {
     console.log(stockNb);
     console.log(price);
 
-    sendMail(price, stockNb);
+    // sendMail(price, stockNb);
   } catch (err) {
     console.log("error");
   }
@@ -33,7 +33,8 @@ function getNumber(string) {
   return string.match(/\d+(?:\.\d+)?/g).join("");
 }
 
-async function sendMail(price, stockNb) {
+// async function sendMail(price, stockNb) {
+async function sendMail() {
   let transporter = mailer.createTransport({
     host: "smtp.mail.yahoo.com",
     port: 465,
@@ -99,7 +100,8 @@ function startTracking() {
   let job = new CronJob(
     `*/${interval} * * * *`,
     async () => {
-      await getProduct();
+      // await getProduct();
+      sendMail();
     },
     null,
     true,
