@@ -79,7 +79,7 @@ async function sendMail(price, stockNb) {
 
   let mail = {
     from: "rkdooleea@yahoo.com",
-    to: "kdooleea@yahoo.ca",
+    to: "yoshrajoo04@gmail.com",
     subject: "Babe 😞",
     text: `kissy? 😘`,
     html: html,
