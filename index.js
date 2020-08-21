@@ -55,14 +55,33 @@ async function sendMail(price, stockNb) {
   //   html: html,
   // };
 
-  let html = `<div>Nb in stock: ${stockNb}</div>
-  <div><a href=${URL}>LINK</a></div>`;
+  let html = `<div 
+  style="background-color: rosybrown;
+        width: 95%;
+        height: 100%;
+        box-sizing: border-box;
+        padding: 15px 25px 15px 20px;
+        box-shadow: -12px -12px 30px 5px rgba(255, 255, 255, 0.9),
+          12px 12px 30px 5px rgba(50, 58, 73, 0.2);
+        border-radius: 15px;
+        font-family: Comic Sans MS, cursive, sans-serif;">
+  <p 
+  style="color: #f5f6f7;
+  text-align: center;
+  letter-spacing: 2px;"
+  >I miss you 😢</p>
+  <p
+  style="color: #f5f6f7;
+  text-align: center;
+  letter-spacing: 2px;"
+  >❤️ I love you!</p>
+</div>`;
 
   let mail = {
     from: "rkdooleea@yahoo.com",
     to: "kdooleea@yahoo.ca",
-    subject: `Nintento price: $${price}`,
-    text: `Price is now ${price}`,
+    subject: "Babe 😞",
+    text: `kissy? 😘`,
     html: html,
   };
 
