@@ -3,6 +3,8 @@ const axios = require("axios");
 const cheerio = require("cheerio");
 let mailer = require("nodemailer");
 let CronJob = require("cron").CronJob;
+let dateFormat = require('dateformat');
+
 
 let emailStatus;
 
@@ -88,17 +90,20 @@ async function sendMail() {
   };
 
   await transporter.sendMail(mail, (error, info) => {
+    let now = new Date();
 
     if (error) {
       console.log(`EMAIL ERROR: ${error}`);
       emailStatus = {
         lastEmailStatus: error,
+        lastSent: dateFormat(now, "dddd, mmmm dS, yyyy, h:MM:ss TT"),
         message: "Server crashed!"
       }
     } else {
       console.log(`EMAIL SENT SUCCESSFULLY: ${info.response}`);
       emailStatus = {
         lastEmailStatus: info.response,
+        lastSent: dateFormat(now, "dddd, mmmm dS, yyyy, h:MM:ss TT"),
         message: "Server up and running!"
       }
     }
