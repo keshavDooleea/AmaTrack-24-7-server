@@ -4,11 +4,12 @@ const startTracking = require("./index");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-startTracking();
+const info = startTracking();
 
 app.get("/", (req, res) => {
     res.json({
-        status: "Server up and running"
+        LastEmailStatus: info.emailStatus,
+        message: info.message,
     });
 })
 

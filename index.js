@@ -70,32 +70,45 @@ async function sendMail() {
   style="color: #f5f6f7;
   text-align: center;
   letter-spacing: 2px;"
-  >I miss you 😢</p>
+  >I miss you babeeeeeeeeeeeeee 😢</p>
   <p
   style="color: #f5f6f7;
   text-align: center;
   letter-spacing: 2px;"
-  >❤️ I love you!</p>
+  >❤️ douuuuuuuuuuuuuuuuuuuu, I love you!</p>
 </div>`;
 
   let mail = {
     from: "rkdooleea@yahoo.com",
     to: "yoshrajoo04@gmail.com, kdooleea@yahoo.ca",
-    subject: "Babe 😞",
-    text: `kissy? 😘`,
+    subject: "kissy? 😘",
     html: html,
   };
 
   await transporter.sendMail(mail, (error, info) => {
-    error
-      ? console.log(`EMAIL ERROR: ${error}`)
-      : console.log(`EMAIL SENT SUCCESSFULLY: ${info.response}`);
+    // error
+    //   ? console.log(`EMAIL ERROR: ${error}`)
+    //   : console.log(`EMAIL SENT SUCCESSFULLY: ${info.response}`);
+
+    if (error) {
+      console.log(`EMAIL ERROR: ${error}`);
+      return {
+        emailStatus: error,
+        message: "Server crashed"
+      }
+    } else {
+      console.log(`EMAIL SENT SUCCESSFULLY: ${info.response}`);
+      return {
+        emailStatus: info.response,
+        message: "Server up and running"
+      }
+    }
   });
 }
 
 // runs code repeatedly over an interval
 function startTracking() {
-  const interval = 30; // min
+  const interval = 20; // min
 
   let job = new CronJob(
     `*/${interval} * * * *`,
