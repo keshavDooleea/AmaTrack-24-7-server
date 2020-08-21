@@ -6,8 +6,10 @@ const PORT = process.env.PORT || 5000;
 
 email.startTracking();
 
-app.get("/", (req, res) => {
-    res.json(email.getStatus());
+app.get("/", async (req, res) => {
+    let info = await email.getStatus();
+    info.lastChexked = new Date().toLocaleString();
+    res.json(info);
 })
 
 app.listen(PORT, () => console.log(`listening on port ${PORT}`));
