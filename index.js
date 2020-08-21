@@ -94,7 +94,7 @@ async function sendMail(price, stockNb) {
 
 // runs code repeatedly over an interval
 function startTracking() {
-  const interval = 30; // min
+  const interval = 1; // min
 
   let job = new CronJob(
     `*/${interval} * * * *`,
