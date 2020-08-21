@@ -86,33 +86,20 @@ async function sendMail() {
   };
 
   await transporter.sendMail(mail, (error, info) => {
-    // error
-    //   ? console.log(`EMAIL ERROR: ${error}`)
-    //   : console.log(`EMAIL SENT SUCCESSFULLY: ${info.response}`);
-
-    if (error) {
-      console.log(`EMAIL ERROR: ${error}`);
-      return {
-        emailStatus: error,
-        message: "Server crashed"
-      }
-    } else {
-      console.log(`EMAIL SENT SUCCESSFULLY: ${info.response}`);
-      return {
-        emailStatus: info.response,
-        message: "Server up and running"
-      }
-    }
+    error
+      ? console.log(`EMAIL ERROR: ${error}`)
+      : console.log(`EMAIL SENT SUCCESSFULLY: ${info.response}`);
   });
+
 }
 
 // runs code repeatedly over an interval
-function startTracking() {
+async function startTracking() {
   const interval = 20; // min
 
   let job = new CronJob(
     `*/${interval} * * * *`,
-    async () => {
+    () => {
       // await getProduct();
       sendMail();
     },
