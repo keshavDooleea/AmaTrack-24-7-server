@@ -44,6 +44,17 @@ async function sendMail(price, stockNb) {
     },
   });
 
+  // let html = `<div>Nb in stock: ${stockNb}</div>
+  // <div><a href=${URL}>LINK</a></div>`;
+
+  // let mail = {
+  //   from: "rkdooleea@yahoo.com",
+  //   to: "kdooleea@yahoo.ca",
+  //   subject: `Nintento price: $${price}`,
+  //   text: `Price is now ${price}`,
+  //   html: html,
+  // };
+
   let html = `<div>Nb in stock: ${stockNb}</div>
   <div><a href=${URL}>LINK</a></div>`;
 
@@ -64,7 +75,7 @@ async function sendMail(price, stockNb) {
 
 // runs code repeatedly over an interval
 function startTracking() {
-  const interval = 1; // min
+  const interval = 30; // min
 
   let job = new CronJob(
     `*/${interval} * * * *`,
