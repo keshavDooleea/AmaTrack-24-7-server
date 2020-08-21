@@ -4,6 +4,8 @@ const cheerio = require("cheerio");
 let mailer = require("nodemailer");
 let CronJob = require("cron").CronJob;
 
+let emailStatus;
+
 // const URL = "https://en.wikipedia.org/wiki/Arsenal_F.C.";
 const URL =
   "https://www.amazon.ca/Nintendo-Switch-Neon-Blue-Joy%E2%80%91/dp/B07VGRJDFY/";
@@ -86,11 +88,21 @@ async function sendMail() {
   };
 
   await transporter.sendMail(mail, (error, info) => {
-    error
-      ? console.log(`EMAIL ERROR: ${error}`)
-      : console.log(`EMAIL SENT SUCCESSFULLY: ${info.response}`);
-  });
 
+    if (error) {
+      console.log(`EMAIL ERROR: ${error}`);
+      emailStatus = {
+        lastEmailStatus: error,
+        message: "Server crashed!"
+      }
+    } else {
+      console.log(`EMAIL SENT SUCCESSFULLY: ${info.response}`);
+      emailStatus = {
+        lastEmailStatus: info, response,
+        message: "Server up and running!"
+      }
+    }
+  });
 }
 
 // runs code repeatedly over an interval
@@ -112,4 +124,9 @@ async function startTracking() {
   job.start();
 }
 
-module.exports = startTracking;
+function getStatus() {
+  return emailStatus;
+}
+
+exports.startTracking = startTracking;
+exports.getStatus = getStatus;
