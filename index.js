@@ -1,44 +1,68 @@
 require("dotenv").config();
-const axios = require("axios");
-const cheerio = require("cheerio");
 let mailer = require("nodemailer");
 let CronJob = require("cron").CronJob;
 let dateFormat = require('dateformat');
+const axios = require("axios");
+const cheerio = require("cheerio");
 
+// mongo schemas
+const Product = require("./productSchema").Product;
 
-let emailStatus;
-
-// const URL = "https://en.wikipedia.org/wiki/Arsenal_F.C.";
-const URL =
-  "https://www.amazon.ca/Nintendo-Switch-Neon-Blue-Joy%E2%80%91/dp/B07VGRJDFY/";
-
-// get page source contents
-async function getProduct() {
-  // make http request to get source content
-  try {
-    const { data } = await axios.get(URL);
-    const $ = cheerio.load(data); // load html
-    const stockNb = getNumber($(".a-size-medium.a-color-success").text());
-    const price = getNumber(
-      $("#priceblock_ourprice.a-size-medium.a-color-price").text()
-    );
-
-    console.log(stockNb);
-    console.log(price);
-
-    // sendMail(price, stockNb);
-  } catch (err) {
-    console.log("error");
-  }
-}
+let emailStatus = {
+  lastEmailStatus: "",
+  lastSent: "",
+  dbSize: 0,
+  message: ""
+};
 
 // extracts number from text/string
 function getNumber(string) {
   return string.match(/\d+(?:\.\d+)?/g).join("");
 }
 
-// async function sendMail(price, stockNb) {
-async function sendMail() {
+// constantly scraping and getting back the price
+async function getPrice(url) {
+  let price, shipping;
+
+  const { data } = await axios.get(url);
+  const $ = cheerio.load(data); // loads html
+
+  const priceHtmlTags = [$("#price_inside_buybox.a-size-medium.a-color-price").text(), $("#priceblock_ourprice.a-size-medium.a-color-price").text()];
+  priceHtmlTags.forEach(tag => {
+    tag !== "" ? price = getNumber(tag) : null;
+  });
+
+  // getting shipping costs
+  const shippingHtmlTags = [$("#ourprice_shippingmessage .a-color-secondary.a-size-base").text()];
+  shippingHtmlTags.forEach(tag => {
+    tag !== "" ? shipping = getNumber(tag) : shipping = 0;
+  });
+
+  return parseFloat(price) + parseFloat(shipping);
+}
+
+async function checkDB() {
+  await Product.find({}, (err, products) => {
+    if (err) {
+      console.log(`SERVER 2 ERROR: ${err}`);
+      return;
+    }
+
+    products.forEach(async (product) => {
+      const currentPrice = await getPrice(product.url);
+
+      if (currentPrice <= product.desiredPrice) {
+        await sendMail(product, currentPrice, products.length);
+
+        // remove from db
+        await Product.findOneAndDelete({ key: product.key });
+        console.log(`product removed: ${product}`);
+      }
+    })
+  });
+}
+
+async function sendMail(product, currentPrice, length) {
   let transporter = mailer.createTransport({
     host: "smtp.mail.yahoo.com",
     port: 465,
@@ -49,43 +73,41 @@ async function sendMail() {
     },
   });
 
-  // let html = `<div>Nb in stock: ${stockNb}</div>
-  // <div><a href=${URL}>LINK</a></div>`;
+  let html =
+    ` <div style="
+    width: 90%;
+    height: 100%;
+    box-shadow: -12px -12px 30px 5px rgba(255, 255, 255, 0.9),
+      12px 12px 30px 5px rgba(50, 58, 73, 0.2);
+    background-color: #f5f6f7;
+    border-radius: 15px;
+    font-family: Comic Sans MS, cursive, sans-serif;
+  ">
+    <div
+        style="height: 20%; background-color: #232f3e; padding: 15px 25px 15px 20px; box-sizing: border-box; border-radius: 10px 10px 0 0; display: flex; align-items: center;">
+        <h3 style="color: rgba(249,225,115,1); letter-spacing: 1.5px;">AmaTrack price drop alert</h3>
+    </div>
 
-  // let mail = {
-  //   from: "rkdooleea@yahoo.com",
-  //   to: "kdooleea@yahoo.ca",
-  //   subject: `Nintento price: $${price}`,
-  //   text: `Price is now ${price}`,
-  //   html: html,
-  // };
-
-  let html = `<div 
-  style="background-color: rosybrown;
-        width: 95%;
-        height: 100%;
-        box-sizing: border-box;
-        padding: 15px 25px 15px 20px;
-        box-shadow: -12px -12px 30px 5px rgba(255, 255, 255, 0.9),
-          12px 12px 30px 5px rgba(50, 58, 73, 0.2);
-        border-radius: 15px;
-        font-family: Comic Sans MS, cursive, sans-serif;">
-  <p 
-  style="color: #f5f6f7;
-  text-align: center;
-  letter-spacing: 2px;"
-  >I miss you babeeeeeeeeeeeeee 😢</p>
-  <p
-  style="color: #f5f6f7;
-  text-align: center;
-  letter-spacing: 2px;"
-  >❤️ douuuuuuuuuuuuuuuuuuuu, I love you!</p>
-</div>`;
+    <div style="height: 60%; padding: 15px 25px 15px 20px; box-sizing: border-box;">
+        <p>Your product's price has been dropped to <span style="color: #0066c0;">${currentPrice}</span>!</p>
+        <p style="margin-top: 30px;">Product: <span style="color: #0066c0;">${product.title}</span></p>
+        <p style="margin-top: 15px;">Product link: <a href="${product.url}" style="color: #0066c0;">${product.url}</a></p>
+        <p style="margin-top: 15px;">Product's previous price: <span
+                style="color: #0066c0;">$${product.actualPrice}</span> </p>
+        <p style="margin-top: 15px;">As a result, your item has been removed from the database.<br>You won't be
+            receiving alerts for this product again!
+        </p>
+    </div>
+    <div
+        style="height: 20%; padding: 15px 25px 15px 20px; box-sizing: border-box; border-radius: 0 0 10px 10px; display: flex; align-items: flex-end; justify-content: flex-end;">
+        <small style="color: rosybrown;">Reetesh Dooleea</small>
+    </div>
+</div>`
 
   let mail = {
     from: "rkdooleea@yahoo.com",
-    to: "yoshrajoo04@gmail.com, kdooleea@yahoo.ca",
-    subject: "kissy? 😘",
+    to: `${product.email}`,
+    subject: `Amazon Price drop!`,
     html: html,
   };
 
@@ -97,6 +119,7 @@ async function sendMail() {
       emailStatus = {
         lastEmailStatus: error,
         lastSent: dateFormat(now, "dddd, mmmm dS, yyyy, h:MM:ss TT"),
+        dbSize: length,
         message: "Server crashed!"
       }
     } else {
@@ -104,6 +127,7 @@ async function sendMail() {
       emailStatus = {
         lastEmailStatus: info.response,
         lastSent: dateFormat(now, "dddd, mmmm dS, yyyy, h:MM:ss TT"),
+        dbSize: length,
         message: "Server up and running!"
       }
     }
@@ -115,10 +139,10 @@ async function startTracking() {
   const interval = 30; // min
 
   let job = new CronJob(
-    `*/${interval} * * * *`,
+    // `*/${interval} * * * *`,
+    `*/15 * * * * *`,
     () => {
-      // await getProduct();
-      sendMail();
+      checkDB();
     },
     null,
     true,

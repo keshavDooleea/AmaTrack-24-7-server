@@ -1,9 +1,16 @@
+require("dotenv").config();
 const express = require("express");
+const mongo = require("mongoose");
 const email = require("./index");
 let dateFormat = require('dateformat');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
+
+// Mongo connection
+mongo.connect(process.env.MONGODB_URI || process.env.DB_CONNECTION,
+    { useUnifiedTopology: true, useNewUrlParser: true, useFindAndModify: false },
+    () => console.log("connected to DB!"));
 
 email.startTracking();
 
