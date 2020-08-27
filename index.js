@@ -48,11 +48,14 @@ async function getPrice(url) {
 }
 
 async function checkDB() {
+  // get all items from db
   await Product.find({}, (err, products) => {
     if (err) {
       console.log(`SERVER 2 ERROR: ${err}`);
       return;
     }
+
+    console.log(products.length);
 
     products.forEach(async (product) => {
       const data = await getPrice(product.url);
