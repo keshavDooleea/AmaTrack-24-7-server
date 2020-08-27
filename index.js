@@ -27,6 +27,9 @@ async function getPrice(url) {
   const { data } = await axios.get(url);
   const $ = cheerio.load(data); // loads html
 
+  // get title
+  const title = $("#productTitle.a-size-large.product-title-word-break").text();
+
   const priceHtmlTags = [$("#price_inside_buybox.a-size-medium.a-color-price").text(), $("#priceblock_ourprice.a-size-medium.a-color-price").text()];
   priceHtmlTags.forEach(tag => {
     tag !== "" ? price = getNumber(tag) : null;
@@ -38,7 +41,10 @@ async function getPrice(url) {
     tag !== "" ? shipping = getNumber(tag) : shipping = 0;
   });
 
-  return parseFloat(price) + parseFloat(shipping);
+  return {
+    title,
+    price: parseFloat(price) + parseFloat(shipping)
+  };
 }
 
 async function checkDB() {
@@ -49,10 +55,12 @@ async function checkDB() {
     }
 
     products.forEach(async (product) => {
-      const currentPrice = await getPrice(product.url);
+      const data = await getPrice(product.url);
+      const currentPrice = data.price;
+      const title = data.title;
 
       if (currentPrice <= product.desiredPrice) {
-        await sendMail(product, currentPrice, products.length);
+        await sendMail(product, currentPrice, title, products.length);
 
         // remove from db
         await Product.findOneAndDelete({ key: product.key });
@@ -62,7 +70,7 @@ async function checkDB() {
   });
 }
 
-async function sendMail(product, currentPrice, length) {
+async function sendMail(product, currentPrice, title, length) {
   let transporter = mailer.createTransport({
     host: "smtp.mail.yahoo.com",
     port: 465,
@@ -90,7 +98,7 @@ async function sendMail(product, currentPrice, length) {
 
     <div style="height: 60%; padding: 15px 25px 15px 20px; box-sizing: border-box;">
         <p>Your product's price has been dropped to <span style="color: #0066c0;">${currentPrice}</span>!</p>
-        <p style="margin-top: 30px;">Product: <span style="color: #0066c0;">${product.title}</span></p>
+        <p style="margin-top: 30px;">Product: <span style="color: #0066c0;">${title}</span></p>
         <p style="margin-top: 15px;">Product link: <a href="${product.url}" style="color: #0066c0;">${product.url}</a></p>
         <p style="margin-top: 15px;">Product's previous price: <span
                 style="color: #0066c0;">$${product.actualPrice}</span> </p>
@@ -119,7 +127,7 @@ async function sendMail(product, currentPrice, length) {
       emailStatus = {
         lastEmailStatus: error,
         lastSent: dateFormat(now, "dddd, mmmm dS, yyyy, h:MM:ss TT"),
-        dbSize: length,
+        dbSize: length - 1,
         message: "Server crashed!"
       }
     } else {
@@ -127,7 +135,7 @@ async function sendMail(product, currentPrice, length) {
       emailStatus = {
         lastEmailStatus: info.response,
         lastSent: dateFormat(now, "dddd, mmmm dS, yyyy, h:MM:ss TT"),
-        dbSize: length,
+        dbSize: length - 1,
         message: "Server up and running!"
       }
     }
