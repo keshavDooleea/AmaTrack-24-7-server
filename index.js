@@ -3,7 +3,8 @@ let mailer = require("nodemailer");
 let CronJob = require("cron").CronJob;
 let dateFormat = require('dateformat');
 const axios = require("axios");
-const cheerio = require("cheerio");
+const { JSDOM } = require("jsdom")
+
 
 // mongo schemas
 const Product = require("./productSchema").Product;
@@ -21,24 +22,32 @@ function getNumber(string) {
 }
 
 // constantly scraping and getting back the price
-async function getPrice(url) {
+async function scrapeProduct(url) {
   let price, shipping;
 
   const { data } = await axios.get(url);
-  const $ = cheerio.load(data); // loads html
+  const dom = new JSDOM(data, {});
+  const { document } = dom.window;
 
   // get title
-  const title = $("#productTitle.a-size-large.product-title-word-break").text();
+  const title = document.querySelector("#productTitle.a-size-large.product-title-word-break").textContent;
 
-  const priceHtmlTags = [$("#price_inside_buybox.a-size-medium.a-color-price").text(), $("#priceblock_ourprice.a-size-medium.a-color-price").text()];
+  // finding correct price
+  const priceHtmlTags = [document.querySelector("#price_inside_buybox.a-size-medium.a-color-price"), document.querySelector("#priceblock_ourprice.a-size-medium.a-color-price")];
   priceHtmlTags.forEach(tag => {
-    tag !== "" ? price = getNumber(tag) : null;
+    if (tag !== null) {
+      price = getNumber(tag.textContent);
+    }
   });
 
   // getting shipping costs
-  const shippingHtmlTags = [$("#ourprice_shippingmessage .a-color-secondary.a-size-base").text()];
+  const shippingHtmlTags = [document.querySelector("#ourprice_shippingmessage .a-color-secondary.a-size-base")];
   shippingHtmlTags.forEach(tag => {
-    tag !== "" ? shipping = getNumber(tag) : shipping = 0;
+    if (tag !== null) {
+      shipping = getNumber(tag.textContent);
+    } else {
+      shipping = 0;
+    }
   });
 
   return {
@@ -58,7 +67,7 @@ async function checkDB() {
     console.log(products.length);
 
     products.forEach(async (product) => {
-      const data = await getPrice(product.url);
+      const data = await scrapeProduct(product.url);
       const currentPrice = data.price;
       const title = data.title;
 
@@ -147,11 +156,10 @@ async function sendMail(product, currentPrice, title, length) {
 
 // runs code repeatedly over an interval
 async function startTracking() {
-  const interval = 30; // min
+  const interval = 10; // min
 
   let job = new CronJob(
-    // `*/${interval} * * * *`,
-    `*/15 * * * * *`,
+    `*/${interval} * * * *`,
     () => {
       checkDB();
     },
